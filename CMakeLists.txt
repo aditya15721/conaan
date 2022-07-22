@@ -6,5 +6,4 @@ find_package(mosquitto)
 add_executable(${PROJECT_NAME} mqtt_pub.cpp)
 
 # Use the global target
-target_link_libraries(${PROJECT_NAME} mosquitto::mosquitto)
-
+target_link_libraries(${PROJECT_NAME} mosquitto::libmosquitto)
