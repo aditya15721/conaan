@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(mosquitto_project)
+project(mosquitto_project CXX)
 
 find_package(mosquitto)
 
