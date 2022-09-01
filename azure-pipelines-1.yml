@@ -9,7 +9,65 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
-steps:
-- script: |
-    make
-  displayName: 'make'
+jobs:
+- job: Linux
+  pool:
+    vmImage: 'ubuntu-16.04'
+  strategy:
+    matrix:
+      Clang 6.0 Debug:
+        CC: clang
+        CXX: clang++
+        BuildType: Debug
+        USE_SANITIZER: address
+        GENERATOR: "Unix Makefiles"
+        CXX_STDLIB: libstdc++11
+
+      Clang 6.0 Release:
+        CC: clang
+        CXX: clang++
+        BuildType: Release
+        USE_SANITIZER: none
+        GENERATOR: "Unix Makefiles"
+        CXX_STDLIB: libstdc++11
+
+      GCC 8 Debug:
+        CC: gcc-8
+        CXX: g++-8
+        BuildType: Debug
+        USE_SANITIZER: none
+        GENERATOR: "Unix Makefiles"
+        CXX_STDLIB: libstdc++11
+
+      GCC 8 Release:
+        CC: gcc-8
+        CXX: g++-8
+        BuildType: Release
+        USE_SANITIZER: none
+        GENERATOR: "Unix Makefiles"
+        CXX_STDLIB: libstdc++11
+
+  steps:
+     - task: UsePythonVersion@0
+       inputs:
+         versionSpec: '3.7'
+     - script: |
+         git clone --branch $(CYCLONE_REF) $(CYCLONE_REPO)
+         git clone --branch $(IDLPP_REF) $(IDLPP_REPO)
+       displayName: 'Checkout repositories' 
+     - script: |
+         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+         sudo apt-get update
+         sudo apt-get install -y gcc-8 g++-8
+         pip install --upgrade pip     
+         pip install conan --upgrade
+         conan profile new default --detect
+         conan profile update settings.compiler.libcxx=$(CXX_STDLIB) default
+         conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+         mkdir -p $(Build.SourcesDirectory)/cyclonedds/build
+         cd $(Build.SourcesDirectory)/cyclonedds/build
+         conan install -b missing -s arch=x86_64 -s build_type=$(BuildType) ..
+         mkdir -p $(Build.SourcesDirectory)/build
+         cd $(Build.SourcesDirectory)/build
+         conan install -b missing -s arch=x86_64 -s build_type=$(BuildType) ..
+       displayName: 'Install Build Dependencies'
